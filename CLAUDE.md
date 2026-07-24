@@ -59,6 +59,7 @@ Third person. Starts with "Use when...". Includes trigger keywords a real user w
 - **Temporary workarounds get HTML-comment markers.** Wrap the section with `<!-- TEMPORARY: short description -->` We check each `<!-- TEMPORARY:` after each n8n release.
 - **Hooks never inline skill content.** Hooks emit ~25 tokens of additionalContext at most, naming the canonical Skill-tool path so compaction's skill re-attachment works.
 - **The plugin doesn't edit user AGENT.md / CLAUDE.md files.** README provides a copy-pasteable snippet for users who want it.
+- **Only the Claude plugin bundles the n8n MCP.** `.claude-plugin/plugin.json` ships an `mcpServers` entry whose per-user instance URL is collected via `userConfig` (`${user_config.n8n_url}/mcp-server/http`, prompted at enable time; the field takes the base URL only and the manifest appends the path, since Claude Code substitutes the value verbatim and can't normalize a full URL). Codex can't match this: it has no install-time config prompt and won't expand variables in an MCP `url` (openai/codex#24401 open, #7367 closed "not planned"). So the Codex plugin stays skills/hooks only and users run `codex mcp add n8n-mcp --url .../mcp-server/http` once (documented in README). Revisit if #24401 lands a user-config path. The MCP endpoint is `<instance>/mcp-server/http` (streamable HTTP, OAuth), n8n 2.2.0+.
 
 ## Don't
 
