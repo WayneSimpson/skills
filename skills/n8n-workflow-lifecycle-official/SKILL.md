@@ -91,21 +91,13 @@ Plus two notes:
 - **Match existing project conventions before introducing your own.** Skim a couple of nearby workflows via `search_workflows` + `get_workflow_details` and mirror the sticky palette, naming, and description style.
 - **Layout is auto-applied on create / update.** SDK `position` values for non-sticky nodes are ignored. Stickies, node groups, and naming are your readability levers.
 
-## Folder limitations
+## Folder management
 
-The MCP can place a workflow into a folder that **already exists**. It cannot:
+On a registered instance the MCP creates and organizes folders: `create_folder`, `update_folder` (rename/move), `move_workflows_to_folder`, and a `folderId` on `create_workflow_from_code` for create-time placement. `search_folders` resolves names to IDs.
 
-- Create new folders
-- Move existing folders
-- Move existing workflows between folders
+If the user wants a folder that doesn't exist, create it, don't build at the root and report success. If the folder tools are absent, the instance isn't registered: folders are blocked in the UI too, so ask the user to register (free, in Settings) rather than create the folder by hand. No tool deletes a folder, and projects are read-only.
 
-If the user asks for a folder that doesn't exist, **say so before building**. Don't silently create at the project root and report success. Surface options:
-
-1. User creates the folder manually, then you place workflows into it.
-2. Use a different existing folder.
-3. Confirm root-level placement is acceptable.
-
-For the full protocol including detecting existing folders via `search_folders`, read `references/FOLDER_LIMITATIONS.md`.
+For the full protocol, read `references/FOLDER_LIMITATIONS.md`.
 
 ## Per-workflow MCP access
 
@@ -126,7 +118,7 @@ There are things the user has to do that you can't, and they need to be done bef
 
 - **Verify credentials per node.** `newCredential('Label')` is cosmetic. n8n auto-assigns the most recently edited credential of the right type, which silently picks the wrong one when the user has multiples (prod vs staging Gmail, two API keys). Tell them: "open every node that uses a credential and confirm the right one is selected." See `n8n-credentials-and-security-official` non-negotiable #2.
 - **Create missing credentials.** If the user pasted a secret in chat or the workflow needs an account that doesn't exist yet, name the credential *type* and have them create it in the UI.
-- **Create missing folders.** The MCP can't create folders. If the user wanted a folder that doesn't exist, they create it before you can place the workflow there. See `references/FOLDER_LIMITATIONS.md`.
+- **Register for folders (only if the tools are missing).** Folder tools need a registered instance. If they're absent, the user registers (free, in Settings) before you can create or place folders; otherwise you handle folders yourself. See `references/FOLDER_LIMITATIONS.md`.
 - **MCP access toggle for user created workflows.** Workflows you create via the MCP are MCP-accessible by default. The toggle only matters when the test depends on a UI-created workflow being callable from the MCP. See `references/MCP_ACCESS_PER_WORKFLOW.md`.
 
 Don't proceed to TEST until these are confirmed done.

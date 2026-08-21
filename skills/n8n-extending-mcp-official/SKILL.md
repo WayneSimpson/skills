@@ -17,7 +17,7 @@ The MCP calls your workflow as if it were a native tool: input from the `Execute
 
 Case 1 (wrap n8n capability):
 
-- Folder CRUD (create, rename, move, delete): REST API exists, no MCP tool yet.
+- Folder delete, and project create/rename: no MCP tool. Folder create/rename/move and moving workflows between folders now have MCP tools (`create_folder`, `update_folder`, `move_workflows_to_folder`), on a registered instance; delete still needs the REST API.
 - Tag rename/delete: the MCP lists tags (`list_workflow_tags`) and attaches/detaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names), but can't rename or delete tag entities. REST API exists for those.
 - Instance metadata (limits, plan info, configured integrations): no MCP tool.
 - Credential creation: REST API exists (`POST /credentials`), no MCP tool yet.
@@ -71,14 +71,14 @@ Most common patterns, by usefulness. Case 2 (general agent tools) is whatever yo
 
 > **n8n REST API reference:** https://docs.n8n.io/api/api-reference/. Start here for any case-1 wrap. Find the endpoint, then wrap it with an HTTP Request node + `n8nApi` credential. Self-hosted instances expose this at `<instance-url>/api/v1/`.
 
-### 1. Folder management
+### 1. Folder delete and project management
 
-The MCP can place workflows into existing folders but can't create, rename, move, or delete them. n8n's REST API has a [Folders endpoint](https://docs.n8n.io/api/api-reference/#tag/folders), so a one-time wrap solves this for users who organize folders frequently.
+The MCP now creates, renames, and moves folders natively (`create_folder`, `update_folder`, `move_workflows_to_folder`), so those no longer need wrapping. Still missing: **deleting** a folder, and creating/renaming **projects**. n8n's REST API covers both ([Folders endpoint](https://docs.n8n.io/api/api-reference/#tag/folders)), so a one-time wrap fills the gap.
 
 ```
-Tool: create folder
-Input: { projectId: string, name: string, parentFolderId?: string }
-Output: { id, name, projectId, parentFolderId? }
+Tool: delete folder
+Input: { projectId: string, folderId: string }
+Output: { success: boolean }
 ```
 
 ### 2. Instance metadata
