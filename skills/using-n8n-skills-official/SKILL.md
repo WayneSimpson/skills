@@ -48,7 +48,7 @@ These rationalizations cause skills to be skipped. If you catch yourself thinkin
 | "Date math, I'll use a DateTime node" | Invoke `n8n-expressions-official`. DateTime nodes are almost always wrong. |
 | "I'll wrap this in a Merge with 3 sources" | Invoke `n8n-node-configuration-official` `references/MERGE_NODE.md`. Merge defaults to 2 inputs, and 3+ sources need `numberOfInputs` set explicitly. |
 | "I'll fan out these three slow steps to run in parallel" | Invoke `n8n-workflow-lifecycle-official` and read the Execution model section. n8n executes fan-out branches sequentially (top-to-bottom by Y-position), not concurrently. For real concurrency, see `n8n-loops-official` and `n8n-subworkflows-official` (`mode: 'each'` + `waitForSubWorkflow: false`). |
-| "User said which project, I'll just build it" | Invoke `n8n-workflow-lifecycle-official`. Project is not folder. Ask about folder placement BEFORE building. The MCP can't create folders, so if the requested folder doesn't exist, the user must create it in the UI first. |
+| "User said which project, I'll just build it" | Invoke `n8n-workflow-lifecycle-official`. Project is not folder. Ask about folder placement BEFORE building. `create_folder` works on a registered instance. If the folder tools are absent, the instance isn't registered, and folders are blocked in the UI too, so the user must register it first (free Community-edition registration in Settings), not create the folder by hand. |
 | "I'll just run `test_workflow` to see what happens" | Invoke `n8n-workflow-lifecycle-official` `references/TESTING.md`. `test_workflow` mocks the trigger only. Slack sends, DB writes, payments all fire for real. Ask the user first when downstreams have side effects. |
 
 **The meta-skill (this document) tells you WHICH skill applies. The Skill tool loads the actual rules.** Reading the meta-skill once at session start is not a substitute for invoking the skill at the moment of decision.
@@ -85,8 +85,11 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 |---|---|
 | `search_workflows` | Search workflows across the instance by `query` (substring on name/description) and/or `tags` (exact tag names, AND semantics: must have all). The primary cross-workflow **discovery** tool. Use it to discover what already exists. |
 | `get_workflow_details` | Fetch a workflow's full JSON by ID. Use after every create/update to verify connections. |
-| `search_folders` | List folders. **You cannot create or move folders.** You can only place workflows into folders that already exist. |
-| `search_projects` | List projects. |
+| `search_folders` | Resolve a folder name to its ID (full path). **Folder tools require a registered instance** (free Community registration); the skills assume one. |
+| `create_folder` | Create a folder, optionally nested. |
+| `update_folder` | Rename or move a folder within its project. |
+| `move_workflows_to_folder` | Move workflows into a folder (or to project root). |
+| `search_projects` | Resolve a project name to its ID. Read-only. |
 | `list_tags` | List all workflow tags (with `usageCount` per tag). Check the instance's tag vocabulary before tagging or filtering, so you reuse exact names. Tags are attached/detached via `update_workflow` `addTags`/`removeTags`; there's no tag rename/delete tool. |
 | `archive_workflow` / `publish_workflow` / `unpublish_workflow` | Soft-delete / activate / deactivate. Validate before publish. `publish_workflow` takes an optional `versionId` to re-publish a specific version. |
 | `search_executions` | Search executions across the instance (filter by status, workflow, time range). Use for "list recent runs" / "failures in the last hour". Single executions: `get_execution`. |
