@@ -18,7 +18,7 @@ The MCP calls your workflow as if it were a native tool: input from the `Execute
 Case 1 (wrap n8n capability):
 
 - Folder CRUD (create, rename, move, delete): REST API exists, no MCP tool yet.
-- Tag rename/delete: the MCP lists tags (`list_tags`) and attaches/detaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names), but can't rename or delete tag entities. REST API exists for those.
+- Tag rename/delete: the MCP lists tags (`list_workflow_tags`) and attaches/detaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names), but can't rename or delete tag entities. REST API exists for those.
 - Instance metadata (limits, plan info, configured integrations): no MCP tool.
 - Credential creation: REST API exists (`POST /credentials`), no MCP tool yet.
 - Any n8n API operation the MCP doesn't natively expose.

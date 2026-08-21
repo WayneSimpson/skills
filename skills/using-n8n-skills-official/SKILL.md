@@ -19,7 +19,7 @@ Three rules with no exceptions. Violating any produces workflows that look right
 
 n8n evolves faster than any model's training cutoff. Parameter names drift, new MCP tools land, defaults change, patterns get deprecated. Anything you "remember" is likely wrong, often silently.
 
-Trust the skills + live MCP tools (`get_node_types`, `get_sdk_reference`, `get_workflow_best_practices`) over recollection. If a skill contradicts what you "know", trust the skill. If `get_node_types` contradicts a skill, trust the tool. Without this discipline you will ship workflows that look right and silently fail: parameter names that don't exist, renamed nodes, deprecated patterns.
+Trust the skills + live MCP tools (`get_node_types`, `get_workflow_sdk_reference`, `get_workflow_best_practices`) over recollection. If a skill contradicts what you "know", trust the skill. If `get_node_types` contradicts a skill, trust the tool. Without this discipline you will ship workflows that look right and silently fail: parameter names that don't exist, renamed nodes, deprecated patterns.
 
 Unless a user preference overrides it, err on the side of loading too many skills rather than too few. Even a 3-node webhook flow typically needs `n8n-node-configuration-official`, `n8n-expressions-official`, `n8n-error-handling-official`, and `n8n-workflow-lifecycle-official`. Nothing in n8n is too small for skills.
 
@@ -90,15 +90,15 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 | `update_folder` | Rename or move a folder within its project. |
 | `move_workflows_to_folder` | Move workflows into a folder (or to project root). |
 | `search_projects` | Resolve a project name to its ID. Read-only. |
-| `list_tags` | List all workflow tags (with `usageCount` per tag). Check the instance's tag vocabulary before tagging or filtering, so you reuse exact names. Tags are attached/detached via `update_workflow` `addTags`/`removeTags`; there's no tag rename/delete tool. |
+| `list_workflow_tags` | List all workflow tags (with `usageCount` per tag). Check the instance's tag vocabulary before tagging or filtering, so you reuse exact names. Tags are attached/detached via `update_workflow` `addTags`/`removeTags`; there's no tag rename/delete tool. |
 | `archive_workflow` / `publish_workflow` / `unpublish_workflow` | Soft-delete / activate / deactivate. Validate before publish. `publish_workflow` takes an optional `versionId` to re-publish a specific version. |
-| `search_executions` | Search executions across the instance (filter by status, workflow, time range). Use for "list recent runs" / "failures in the last hour". Single executions: `get_execution`. |
+| `search_workflow_executions` | Search executions across the instance (filter by status, workflow, time range). Use for "list recent runs" / "failures in the last hour". Single executions: `get_workflow_execution`. |
 
 ### Workflow building
 
 | Tool | What it does |
 |---|---|
-| `get_sdk_reference` | Fetch the n8n Workflow SDK reference. **Read this before writing workflow code.** Sections: `patterns`, `patterns_detailed`, `expressions`, `functions`, `rules`, `import`, `guidelines`, `design`, `all`. |
+| `get_workflow_sdk_reference` | Fetch the n8n Workflow SDK reference. **Read this before writing workflow code.** Sections: `patterns`, `patterns_detailed`, `expressions`, `functions`, `rules`, `import`, `guidelines`, `design`, `all`. |
 | `get_workflow_best_practices` | Fetch best-practices for a workflow technique. Call once per technique before searching nodes. `technique: "list"` discovers what's available. |
 | `search_nodes` | Discover nodes by capability (e.g. "gmail", "slack", "schedule trigger"). Returns IDs plus discriminators (resource/operation/mode). |
 | `get_node_types` | Fetch exact TypeScript parameter definitions for node IDs. **Required before configuring any node.** Don't guess parameter names. |
@@ -114,10 +114,10 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 
 | Tool | What it does |
 |---|---|
-| `prepare_test_pin_data` | Returns JSON Schemas (not data) for nodes that need pinning: triggers, credentialed nodes, and HTTP Request. You generate sample values. |
+| `prepare_workflow_pin_data` | Returns JSON Schemas (not data) for nodes that need pinning: triggers, credentialed nodes, and HTTP Request. You generate sample values. |
 | `test_workflow` | Run with the pin data you supply. **Auto-pins triggers, credentialed nodes, and HTTP Request.** Code, Edit Fields, If, Data Tables, Execute Command, file ops, and sub-workflow calls run for real. Ask before running if any not-auto-pinned node has side effects. Pin data is per-execution only with no visual indicator in the execution viewer, so tell the user which nodes were pinned after the call. See `n8n-workflow-lifecycle-official` `references/TESTING.md`. |
-| `execute_workflow` | Production execution with the real trigger. Wire error handling first. Same side-effect rules as `test_workflow`. **`executionMode` is required** — use `"manual"` for testing or validating the current workflow (including tests against live external services), and `"production"` only when intentionally running the published workflow as a live execution. Structured `inputs` for chat/form/webhook triggers. Returns an execution ID immediately without waiting; poll `get_execution` for results. |
-| `get_execution` | Fetch an execution by `executionId` + `workflowId` (both required). Metadata only by default; set `includeData: true` (optionally `nodeNames`, `truncateData`) for node inputs/outputs. |
+| `execute_workflow` | Production execution with the real trigger. Wire error handling first. Same side-effect rules as `test_workflow`. **`executionMode` is required** — use `"manual"` for testing or validating the current workflow (including tests against live external services), and `"production"` only when intentionally running the published workflow as a live execution. Structured `inputs` for chat/form/webhook triggers. Returns an execution ID immediately without waiting; poll `get_workflow_execution` for results. |
+| `get_workflow_execution` | Fetch an execution by `executionId` + `workflowId` (both required). Metadata only by default; set `includeData: true` (optionally `nodeNames`, `truncateData`) for node inputs/outputs. |
 
 ### Data tables
 
@@ -172,7 +172,7 @@ For any n8n task:
 
 1. **Recognize the matching skill** from the index above. If the task spans skills, recognize the primary one first and pick up others as their triggers come up.
 2. **Invoke the skill via the Skill tool** before the first MCP call. Don't call n8n MCP tools blind.
-3. **Read the SDK reference once per session** before writing workflow code (`get_sdk_reference`). The most efficient way to avoid SDK-shape mistakes.
+3. **Read the SDK reference once per session** before writing workflow code (`get_workflow_sdk_reference`). The most efficient way to avoid SDK-shape mistakes.
 4. **Get node types before configuring any node** (`get_node_types`). Guessing parameter names creates invalid workflows, sometimes silently.
 5. **Validate before publish, verify after create/update.** Validation catches schema errors. Verification (pulling the workflow back via `get_workflow_details`) catches connection bugs validation misses.
 6. **Surface drift when you spot it.** If a tool or parameter doesn't match what a skill says, tell the user. Updates may be needed.

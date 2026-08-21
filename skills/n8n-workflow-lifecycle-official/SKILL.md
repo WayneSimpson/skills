@@ -10,7 +10,7 @@ description: Use when starting, designing, organizing, finishing, or shipping an
 1. **PLAN.** Gather requirements, ask clarifying questions, search for existing workflows / sub-workflows that already do this.
 2. **BUILD.** Write SDK code (with skills: subworkflows, node-config, expressions, code-nodes; readability section below). Use `validate_node_config` as a side-channel for iteration, debugging, or small single-node edits: clean per-parameter errors without full-graph noise. Not a replacement for `validate_workflow` in VALIDATE.
 3. **VALIDATE.** `validate_workflow` + `get_workflow_details` for connections, then have the user verify per-node credentials and create anything you couldn't (missing credentials, folders, etc).
-4. **TEST.** `test_workflow` with `prepare_test_pin_data`; iterate until output matches intent.
+4. **TEST.** `test_workflow` with `prepare_workflow_pin_data`; iterate until output matches intent.
 5. **PUBLISH.** `publish_workflow` only after stages 3 and 4 are clean.
 6. **HANDOFF.** Production handoff: how to trigger it, what it returns, what to watch, what they should know to use it well.
 
@@ -28,7 +28,7 @@ Skipping a stage produces workflows that look done but break in production, or s
 
 ## Strong defaults
 
-- **Test before publish** with `test_workflow` + `prepare_test_pin_data`. See `references/TESTING.md` for mocking by trigger type, pinning individual nodes, and the side-effect surface. Looser for internal one-off scripts you watch run.
+- **Test before publish** with `test_workflow` + `prepare_workflow_pin_data`. See `references/TESTING.md` for mocking by trigger type, pinning individual nodes, and the side-effect surface. Looser for internal one-off scripts you watch run.
 - **Always include a `description`** on `create_workflow_from_code`. 1-2 sentences capturing *what* and *why*. See "Readability" below.
 
 ## Validation isn't enough
@@ -72,7 +72,7 @@ For full conventions (verb-noun patterns, capitalization, prefixes), read `refer
 - **Workflows:** verb-first, scoped. `Send weekly customer report` not `Customer report sender`.
 - **Nodes:** describe what they *do* in this workflow, not the node type. `Fetch active customers` not `Postgres1`.
 - **Sub-workflows:** plain descriptive name (`Parse RFC2822 date`); carry the category in tags (`subworkflow`, a domain tag, `tool`), not a name prefix. `search_workflows({ tags })` filters on them. See `n8n-subworkflows-official` `references/NAMING_AND_DISCOVERY.md`.
-- **Tags:** the AI-side discovery mechanism (n8n 2.27.0+). The MCP lists (`list_tags`), filters (`search_workflows({ tags })`), and attaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names). Lowercase, 2-4 per workflow. See `references/NAMING_CONVENTIONS.md`.
+- **Tags:** the AI-side discovery mechanism (n8n 2.27.0+). The MCP lists (`list_workflow_tags`), filters (`search_workflows({ tags })`), and attaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names). Lowercase, 2-4 per workflow. See `references/NAMING_CONVENTIONS.md`.
 
 ## Readability: descriptions, node groups, sticky notes, conventions
 
