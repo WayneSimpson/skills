@@ -108,6 +108,7 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 | `validate_node_config` | Schema-only validation of node configs (1-50 per call). Per-parameter errors, no graph noise. Side-channel for iteration/debug; `validate_workflow` still gates publish. For ai_tool subnodes set `isToolNode: true`. |
 | `validate_workflow` | Validate full SDK code before create/update. Necessary but **not sufficient**: doesn't catch all wiring traps (`.to()`, merge index). |
 | `list_credentials` | List accessible credentials (filter by type/project/etc). Returns metadata only, **never secret values**. Discover IDs before binding via `setNodeCredential`. |
+| `list_n8n_connect_services` | List node/credential types the platform can supply managed credentials for (n8n-hosted "connect" coverage). |
 
 ### Workflow testing & execution
 
@@ -129,6 +130,7 @@ n8n's built-in tabular storage. **Not** an external service. Prefer over externa
 | `rename_data_table` / `rename_data_table_column` | Rename. |
 | `add_data_table_column` / `delete_data_table_column` | Schema changes. |
 | `add_data_table_rows` | Append rows. |
+| `get_data_table_rows` | Read rows (optional filter/sort/pagination). |
 
 ### Version history
 
@@ -136,7 +138,33 @@ n8n's built-in tabular storage. **Not** an external service. Prefer over externa
 |---|---|
 | `get_workflow_history` | List a workflow's saved versions, newest first (n8n 2.29.0+). |
 | `get_workflow_version` | Fetch a past version's full content by `versionId`. |
+| `get_workflow_versions_diff` | Diff two saved versions: nodes/connections added, removed, modified. |
 | `restore_workflow_version` | Re-apply a past version as the current draft (records a new history entry). |
+
+<!-- TEMPORARY: n8n Agents are in early preview. When the Agent tools ship to all instances, drop the early-preview callout below and update n8n-agents-official. -->
+### Building n8n Agents (early preview)
+
+**Early preview: these tools may not exist on the user's instance yet.** They register only when the instance enables the Agent builder. Before building an Agent, check whether `create_agent` is in your tool list (or ask the user); if it's absent, tell them the Agent preview isn't enabled rather than guessing or falling back to the LangChain Agent node.
+
+n8n **Agents** are a first-class conversational-agent product, distinct from the LangChain Agent node (`n8n-agents-official` covers the node, not these tools). Build order: `get_agent_builder_reference` → `discover_agent_assets` → `create_agent` → `mutate_agent` (one change per call, latest `configHash`) → `validate_agent` → `call_agent` to test.
+
+| Tool | What it does |
+|---|---|
+| `get_agent_builder_reference` | Required reference for Agent config and `mutate_agent` ops. Read before building. |
+| `discover_agent_assets` | Find models, chat integrations, attachable workflows, sub-agents, or MCP servers to reference. |
+| `search_agents` | Find existing Agents; also discovers sub-agents to attach. |
+| `get_agent` | Read a draft's config, resources, runnable state, and `configHash`. Call before `mutate_agent`. |
+| `list_agent_versions` | List an Agent's publish history, newest first. |
+| `create_agent` | Create a draft (optional initial model/credential/instructions). Returns the editor URL. |
+| `mutate_agent` | Apply one config/skill/task/custom-tool change, using the latest `configHash`. |
+| `verify_agent_mcp_server` | Test an MCP server + credential and return its tools. Call before adding an `mcpServers` entry. |
+| `update_agent_integration` | Connect or disconnect a Slack, Telegram, or Linear channel. |
+| `validate_agent` | Validate the draft, its references, and credential access. Required before publish. |
+| `call_agent` | Test the draft via built-in Preview chat. Uses real tools/credentials; side effects possible. |
+| `publish_agent` | Publish a valid draft; activates its tasks and integrations. |
+| `unpublish_agent` | Unpublish; stops live tasks and integrations. |
+| `revert_agent` | Restore a draft from a published version. |
+| `delete_agent` | Permanently delete an Agent and its resources. |
 
 ## The protocol, in order
 
