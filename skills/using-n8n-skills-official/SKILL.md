@@ -108,7 +108,7 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 | `validate_node_config` | Schema-only validation of node configs (1-50 per call). Per-parameter errors, no graph noise. Side-channel for iteration/debug; `validate_workflow` still gates publish. For ai_tool subnodes set `isToolNode: true`. |
 | `validate_workflow` | Validate full SDK code before create/update. Necessary but **not sufficient**: doesn't catch all wiring traps (`.to()`, merge index). |
 | `list_credentials` | List accessible credentials (filter by type/project/etc). Returns metadata only, **never secret values**. Discover IDs before binding via `setNodeCredential`. |
-| `list_n8n_connect_services` | List node/credential types the platform can supply managed credentials for (n8n-hosted "connect" coverage). |
+| `list_n8n_connect_services` | List node/credential types the platform can supply managed credentials for (n8n credits coverage), so the user can skip credential setup for them. |
 
 ### Workflow testing & execution
 
