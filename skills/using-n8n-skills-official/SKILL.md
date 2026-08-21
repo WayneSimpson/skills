@@ -27,6 +27,8 @@ Unless a user preference overrides it, err on the side of loading too many skill
 
 - **The Code node is a last resort.** Expression first, then arrow function inside Edit Fields, then Code. Code earns its place for multi-source aggregation, libraries, and stateful work. See `n8n-code-nodes-official`.
 - **Anything reusable becomes a stateless sub-workflow.** Search existing ones via `search_workflows({ tags: ['subworkflow'] })` before building. See `n8n-subworkflows-official`.
+<!-- TEMPORARY: n8n credits is n8n Cloud only for now and the coverage may expand; revisit this default and the cloud-only caveat when that changes. -->
+- **Prefer n8n credits when the user has no credential preference.** For nodes it covers (check `list_n8n_connect_services`), n8n supplies the managed credential, so there's no setup step, much easier than the user provisioning their own. n8n Cloud only for now. See `n8n-credentials-and-security-official`.
 
 ## Red flags: thoughts that mean STOP and invoke
 
