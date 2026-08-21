@@ -1,6 +1,6 @@
 ---
 name: n8n-extending-mcp-official
-description: 'Use when you want to expose an n8n workflow as a tool the coding agent can call. Two cases. (1) Wrap n8n API capabilities the MCP doesn''t natively expose: folder CRUD, tag rename/delete, instance metadata, credential creation. (2) Expose a general-purpose workflow as an agent tool: a workflow that calls a third-party API, runs business logic, or does any task you want the agent to invoke. Triggers on "expose as MCP tool", "build a tool for my agent", "I need to know X" where X isn''t an MCP tool, "create folder", "rename tag", or any capability gap.'
+description: 'Use when you want to expose an n8n workflow as a tool the coding agent can call. Two cases. (1) Wrap n8n API capabilities the MCP doesn''t natively expose: folder deletion, project create/rename, tag rename/delete, instance metadata, credential creation. (2) Expose a general-purpose workflow as an agent tool: a workflow that calls a third-party API, runs business logic, or does any task you want the agent to invoke. Triggers on "expose as MCP tool", "build a tool for my agent", "I need to know X" where X isn''t an MCP tool, "delete folder", "rename tag", or any capability gap.'
 ---
 
 <!-- TEMPORARY: update whenever n8n mcp capacities are added. a lot of listed functionalities missing are coming soon -->
@@ -8,7 +8,7 @@ description: 'Use when you want to expose an n8n workflow as a tool the coding a
 
 Any n8n workflow with MCP access enabled becomes a tool the coding agent can call by name. Two common cases:
 
-1. **Wrap n8n capabilities the MCP doesn't expose.** The MCP covers workflow CRUD, validation, execution, data tables, credential listing, execution search, folder/project listing, tag listing and attach/detach. Still missing: folder CRUD, tag rename/delete, instance metadata, credential creation. Build a workflow that hits the n8n API and exposes the result as an agent tool.
+1. **Wrap n8n capabilities the MCP doesn't expose.** The MCP covers workflow CRUD, validation, execution, data tables, credential listing, execution search, folder create/rename/move and folder/project listing, tag listing and attach/detach. Still missing: folder deletion, project create/rename, tag rename/delete, instance metadata, credential creation. Build a workflow that hits the n8n API and exposes the result as an agent tool.
 2. **Expose a general-purpose workflow as a tool.** A workflow that has nothing to do with n8n itself (calls a third-party API, runs internal business logic, looks something up in a private system) can be MCP-callable. Lets the agent invoke real operations during a coding session.
 
 The MCP calls your workflow as if it were a native tool: input from the `Execute Workflow Trigger`, output from the workflow's last node.
