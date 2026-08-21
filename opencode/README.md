@@ -4,6 +4,7 @@ This plugin bridges the n8n-skills bash hooks into [OpenCode](https://opencode.a
 
 ## What it does
 
+- **Registers the bundled `skills/` directory** with OpenCode via the `config` hook, so the n8n capability skills are discoverable without a manual `skills.paths` entry
 - **Injects the `using-n8n-skills-official` meta-skill into the system prompt** on every LLM call, so the agent always has the n8n skill protocol in context
 - **Survives compaction**: the meta-skill is injected into compaction context so it persists across context compression
 - **Appends hook reminders to n8n MCP tool results**: after each n8n MCP tool call, the corresponding bash hook script fires and its reminder is appended to the tool output
@@ -11,55 +12,14 @@ This plugin bridges the n8n-skills bash hooks into [OpenCode](https://opencode.a
 ## Prerequisites
 
 - An n8n instance with the instance-level MCP server enabled ([setup guide](https://docs.n8n.io/advanced-ai/mcp/accessing-n8n-mcp-server/))
-- OpenCode with `@opencode-ai/plugin` support
+- OpenCode (plugin event names verified against `@opencode-ai/plugin` 1.4.10 / OpenCode 1.18.15)
 - `bash` and `jq` available on the system
+
+Two events used (`experimental.chat.system.transform`, `experimental.session.compacting`) are on OpenCode's experimental plugin surface and may change between versions. If skill injection stops working after an OpenCode upgrade, check these event names against your installed `@opencode-ai/plugin`.
 
 ## Installation
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/n8n-io/skills.git ~/.local/share/opencode/n8n-skills
-```
-
-### 2. Symlink the plugin
-
-```bash
-# Create the plugins directory if it doesn't exist
-mkdir -p ~/.config/opencode/plugins/
-
-# Symlink the plugin file (auto-loaded by OpenCode on startup)
-ln -s ~/.local/share/opencode/n8n-skills/opencode/plugin.ts \
-      ~/.config/opencode/plugins/n8n-skills-hooks.ts
-```
-
-### 3. Add skills path to OpenCode config
-
-In your `opencode.jsonc`, add the skills path:
-
-```jsonc
-{
-  "skills": {
-    "paths": [
-      "/home/youruser/.local/share/opencode/n8n-skills/skills"
-    ]
-  }
-}
-```
-
-### 4. Add the AGENTS.md snippet
-
-In your project's `AGENTS.md` (or `~/.config/opencode/AGENTS.md` for global):
-
-```markdown
-This project uses n8n. When working with workflows, nodes, expressions, or
-the n8n MCP tools, always start by loading the `using-n8n-skills-official` meta-skill
-and follow its routing into the matching capability skill before acting.
-```
-
-### 5. Restart OpenCode
-
-The plugin loads automatically on the next OpenCode startup.
+See the [main README](../README.md#opencode) for install steps. The OpenCode CLI (one-line config entry) and the desktop app (clone plus a symlink into the plugins folder) install differently.
 
 ## How it works
 
@@ -67,17 +27,20 @@ The plugin is glue code. All actual hook logic (node-specific warnings, antipatt
 
 | OpenCode event | n8n hook equivalent | What happens |
 |----------------|---------------------|--------------|
+| `config` | (install-time setup) | Bundled `skills/` dir pushed into `config.skills.paths` so skills are discoverable |
 | `experimental.chat.system.transform` | SessionStart | Meta-skill injected into system prompt on every LLM call |
 | `experimental.session.compacting` | SessionStart (compact) | Meta-skill injected into compaction context |
 | `tool.execute.after` | PreToolUse + PostToolUse | Bash hook scripts fire after n8n MCP tool calls, reminders appended to tool output |
 
 ### Tool name matching
 
-The plugin matches tool names flexibly (`toolName.includes("n8n") && toolName.endsWith("validate_workflow")`) rather than hardcoding MCP server name prefixes, since MCP server names are user-configurable in OpenCode.
+The plugin derives the tool-name suffixes and their hook scripts from `hooks/hooks.json` (the same source of truth Claude Code and Codex use), so a new hook added there fires in OpenCode too without editing the plugin. It matches a suffix like `validate_workflow` against the tool name rather than hardcoding an MCP server prefix, since server names are user-configurable in OpenCode.
+
+**The connected n8n MCP server must be named with `n8n` in it** (the default). The suffixes (`update_workflow`, `execute_workflow`, etc.) also appear on unrelated CI-automation MCP servers, so the plugin requires `n8n` in the tool name to avoid firing on the wrong tools. If your server is named without `n8n`, no hooks fire.
 
 ### Path resolution
 
-The plugin uses `import.meta.dir` (Bun) to resolve the repo root relative to its own file location. This means it works regardless of where the repo is cloned (no hardcoded paths).
+The plugin resolves the repo root from its own file location via `dirname(fileURLToPath(import.meta.url))`, which works on both runtimes OpenCode uses: the CLI (Bun) and the desktop app (Node/Electron). It deliberately avoids Bun's `import.meta.dir`, which is `undefined` under Node and would throw at load, silently disabling the plugin. Both runtimes resolve the module URL through any symlink to the real file, so the root points at the actual install, not the symlink.
 
 ### MCP tool output shapes
 
@@ -89,13 +52,10 @@ All hook calls use `spawnSync` with a 10-second timeout and are wrapped in try/c
 
 ## Updating
 
+CLI install: if you pinned a version (`...skills.git#v1.2.0`), bump it in `opencode.jsonc` and restart. If you tracked the branch unpinned, clear the cached package and restart to re-resolve:
+
 ```bash
-cd ~/.local/share/opencode/n8n-skills
-git pull origin main
+rm -rf ~/.cache/opencode/packages/n8n-skills@git+*
 ```
 
-This updates skills, hooks, and the plugin together. No plugin updates needed when n8n adds new node warnings or antipattern checks (the bash hooks are the source of truth).
-
-## License
-
-Apache 2.0 (same as the rest of the repo)
+Desktop (symlink) install: `git pull` in your clone. Either way, no plugin edits are needed when n8n changes a hook's warnings or adds a new hook to `hooks/hooks.json`: the plugin reads that file at load and shells out to the bash scripts, so `hooks/` stays the single source of truth.
