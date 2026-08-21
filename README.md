@@ -4,7 +4,7 @@
 
 **n8n's MCP makes the connection. n8n Skills set the standard.**
 
-Built by the n8n team to pair with n8n's instance-level MCP server. Your coding agent can now build and edit workflows through the MCP, and the skills enable it to get it right the first time.
+Built by the n8n team to pair with n8n's instance-level MCP server. Your coding agent can now build and edit workflows through the MCP, organize them into folders and projects, and build n8n Agents. The skills enable it to get it right the first time.
 
 **What's inside:**
 

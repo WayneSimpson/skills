@@ -19,7 +19,7 @@ Three rules with no exceptions. Violating any produces workflows that look right
 
 n8n evolves faster than any model's training cutoff. Parameter names drift, new MCP tools land, defaults change, patterns get deprecated. Anything you "remember" is likely wrong, often silently.
 
-Trust the skills + live MCP tools (`get_node_types`, `get_sdk_reference`, `get_workflow_best_practices`) over recollection. If a skill contradicts what you "know", trust the skill. If `get_node_types` contradicts a skill, trust the tool. Without this discipline you will ship workflows that look right and silently fail: parameter names that don't exist, renamed nodes, deprecated patterns.
+Trust the skills + live MCP tools (`get_node_types`, `get_workflow_sdk_reference`, `get_workflow_best_practices`) over recollection. If a skill contradicts what you "know", trust the skill. If `get_node_types` contradicts a skill, trust the tool. Without this discipline you will ship workflows that look right and silently fail: parameter names that don't exist, renamed nodes, deprecated patterns.
 
 Unless a user preference overrides it, err on the side of loading too many skills rather than too few. Even a 3-node webhook flow typically needs `n8n-node-configuration-official`, `n8n-expressions-official`, `n8n-error-handling-official`, and `n8n-workflow-lifecycle-official`. Nothing in n8n is too small for skills.
 
@@ -27,6 +27,8 @@ Unless a user preference overrides it, err on the side of loading too many skill
 
 - **The Code node is a last resort.** Expression first, then arrow function inside Edit Fields, then Code. Code earns its place for multi-source aggregation, libraries, and stateful work. See `n8n-code-nodes-official`.
 - **Anything reusable becomes a stateless sub-workflow.** Search existing ones via `search_workflows({ tags: ['subworkflow'] })` before building. See `n8n-subworkflows-official`.
+<!-- TEMPORARY: n8n credits is n8n Cloud only for now and the coverage may expand; revisit this default and the cloud-only caveat when that changes. -->
+- **Prefer n8n credits when the user has no credential preference.** For nodes it covers (check `list_n8n_connect_services`), n8n supplies the managed credential, so there's no setup step, much easier than the user provisioning their own. n8n Cloud only for now. See `n8n-credentials-and-security-official`.
 
 ## Red flags: thoughts that mean STOP and invoke
 
@@ -48,7 +50,7 @@ These rationalizations cause skills to be skipped. If you catch yourself thinkin
 | "Date math, I'll use a DateTime node" | Invoke `n8n-expressions-official`. DateTime nodes are almost always wrong. |
 | "I'll wrap this in a Merge with 3 sources" | Invoke `n8n-node-configuration-official` `references/MERGE_NODE.md`. Merge defaults to 2 inputs, and 3+ sources need `numberOfInputs` set explicitly. |
 | "I'll fan out these three slow steps to run in parallel" | Invoke `n8n-workflow-lifecycle-official` and read the Execution model section. n8n executes fan-out branches sequentially (top-to-bottom by Y-position), not concurrently. For real concurrency, see `n8n-loops-official` and `n8n-subworkflows-official` (`mode: 'each'` + `waitForSubWorkflow: false`). |
-| "User said which project, I'll just build it" | Invoke `n8n-workflow-lifecycle-official`. Project is not folder. Ask about folder placement BEFORE building. The MCP can't create folders, so if the requested folder doesn't exist, the user must create it in the UI first. |
+| "User said which project, I'll just build it" | Invoke `n8n-workflow-lifecycle-official`. Project is not folder. Ask about folder placement BEFORE building. `create_folder` works on a registered instance. If the folder tools are absent, the instance isn't registered, and folders are blocked in the UI too, so the user must register it first (free Community-edition registration in Settings), not create the folder by hand. |
 | "I'll just run `test_workflow` to see what happens" | Invoke `n8n-workflow-lifecycle-official` `references/TESTING.md`. `test_workflow` mocks the trigger only. Slack sends, DB writes, payments all fire for real. Ask the user first when downstreams have side effects. |
 
 **The meta-skill (this document) tells you WHICH skill applies. The Skill tool loads the actual rules.** Reading the meta-skill once at session start is not a substitute for invoking the skill at the moment of decision.
@@ -59,7 +61,7 @@ Invoke via the Skill tool. Trigger column = when to invoke.
 
 | Skill | Trigger |
 |---|---|
-| `n8n-workflow-lifecycle-official` | Starting, designing, organizing, or finishing a workflow. Covers sticky-note conventions, descriptions that capture the *why*, naming, validation checklist, folder limitations, MCP-access-per-workflow gotcha |
+| `n8n-workflow-lifecycle-official` | Starting, designing, organizing, or finishing a workflow. Covers sticky-note conventions, descriptions that capture the *why*, naming, validation checklist, folder management, MCP-access-per-workflow gotcha |
 | `n8n-subworkflows-official` | Anything reusable, multi-step builds, or the user mentions reuse. Search before building, stateless patterns, tag-based discovery convention |
 | `n8n-extending-mcp-official` | You need capabilities the MCP doesn't natively provide. Wrap n8n APIs as workflow tools, with user permission |
 | `n8n-expressions-official` | Writing `{{}}`, `$json`, `$node`, expression errors. Luxon for dates, indented multi-line, prefer expressions over extra nodes |
@@ -85,17 +87,20 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 |---|---|
 | `search_workflows` | Search workflows across the instance by `query` (substring on name/description) and/or `tags` (exact tag names, AND semantics: must have all). The primary cross-workflow **discovery** tool. Use it to discover what already exists. |
 | `get_workflow_details` | Fetch a workflow's full JSON by ID. Use after every create/update to verify connections. |
-| `search_folders` | List folders. **You cannot create or move folders.** You can only place workflows into folders that already exist. |
-| `search_projects` | List projects. |
-| `list_tags` | List all workflow tags (with `usageCount` per tag). Check the instance's tag vocabulary before tagging or filtering, so you reuse exact names. Tags are attached/detached via `update_workflow` `addTags`/`removeTags`; there's no tag rename/delete tool. |
+| `search_folders` | Resolve a folder name to its ID (full path). **Folder tools require a registered instance** (free Community registration); the skills assume one. |
+| `create_folder` | Create a folder, optionally nested. |
+| `update_folder` | Rename or move a folder within its project. |
+| `move_workflows_to_folder` | Move workflows into a folder (or to project root). |
+| `search_projects` | Resolve a project name to its ID. Read-only. |
+| `list_workflow_tags` | List all workflow tags (with `usageCount` per tag). Check the instance's tag vocabulary before tagging or filtering, so you reuse exact names. Tags are attached/detached via `update_workflow` `addTags`/`removeTags`; there's no tag rename/delete tool. |
 | `archive_workflow` / `publish_workflow` / `unpublish_workflow` | Soft-delete / activate / deactivate. Validate before publish. `publish_workflow` takes an optional `versionId` to re-publish a specific version. |
-| `search_executions` | Search executions across the instance (filter by status, workflow, time range). Use for "list recent runs" / "failures in the last hour". Single executions: `get_execution`. |
+| `search_workflow_executions` | Search executions across the instance (filter by status, workflow, time range). Use for "list recent runs" / "failures in the last hour". Single executions: `get_workflow_execution`. |
 
 ### Workflow building
 
 | Tool | What it does |
 |---|---|
-| `get_sdk_reference` | Fetch the n8n Workflow SDK reference. **Read this before writing workflow code.** Sections: `patterns`, `patterns_detailed`, `expressions`, `functions`, `rules`, `import`, `guidelines`, `design`, `all`. |
+| `get_workflow_sdk_reference` | Fetch the n8n Workflow SDK reference. **Read this before writing workflow code.** Sections: `patterns`, `patterns_detailed`, `expressions`, `functions`, `rules`, `import`, `guidelines`, `design`, `all`. |
 | `get_workflow_best_practices` | Fetch best-practices for a workflow technique. Call once per technique before searching nodes. `technique: "list"` discovers what's available. |
 | `search_nodes` | Discover nodes by capability (e.g. "gmail", "slack", "schedule trigger"). Returns IDs plus discriminators (resource/operation/mode). |
 | `get_node_types` | Fetch exact TypeScript parameter definitions for node IDs. **Required before configuring any node.** Don't guess parameter names. |
@@ -105,15 +110,16 @@ Tool names are shown without the MCP prefix. The qualified name is `mcp__<server
 | `validate_node_config` | Schema-only validation of node configs (1-50 per call). Per-parameter errors, no graph noise. Side-channel for iteration/debug; `validate_workflow` still gates publish. For ai_tool subnodes set `isToolNode: true`. |
 | `validate_workflow` | Validate full SDK code before create/update. Necessary but **not sufficient**: doesn't catch all wiring traps (`.to()`, merge index). |
 | `list_credentials` | List accessible credentials (filter by type/project/etc). Returns metadata only, **never secret values**. Discover IDs before binding via `setNodeCredential`. |
+| `list_n8n_connect_services` | List node/credential types the platform can supply managed credentials for (n8n credits coverage), so the user can skip credential setup for them. |
 
 ### Workflow testing & execution
 
 | Tool | What it does |
 |---|---|
-| `prepare_test_pin_data` | Returns JSON Schemas (not data) for nodes that need pinning: triggers, credentialed nodes, and HTTP Request. You generate sample values. |
+| `prepare_workflow_pin_data` | Returns JSON Schemas (not data) for nodes that need pinning: triggers, credentialed nodes, and HTTP Request. You generate sample values. |
 | `test_workflow` | Run with the pin data you supply. **Auto-pins triggers, credentialed nodes, and HTTP Request.** Code, Edit Fields, If, Data Tables, Execute Command, file ops, and sub-workflow calls run for real. Ask before running if any not-auto-pinned node has side effects. Pin data is per-execution only with no visual indicator in the execution viewer, so tell the user which nodes were pinned after the call. See `n8n-workflow-lifecycle-official` `references/TESTING.md`. |
-| `execute_workflow` | Production execution with the real trigger. Wire error handling first. Same side-effect rules as `test_workflow`. **`executionMode` is required** — use `"manual"` for testing or validating the current workflow (including tests against live external services), and `"production"` only when intentionally running the published workflow as a live execution. Structured `inputs` for chat/form/webhook triggers. Returns an execution ID immediately without waiting; poll `get_execution` for results. |
-| `get_execution` | Fetch an execution by `executionId` + `workflowId` (both required). Metadata only by default; set `includeData: true` (optionally `nodeNames`, `truncateData`) for node inputs/outputs. |
+| `execute_workflow` | Production execution with the real trigger. Wire error handling first. Same side-effect rules as `test_workflow`. **`executionMode` is required** — use `"manual"` for testing or validating the current workflow (including tests against live external services), and `"production"` only when intentionally running the published workflow as a live execution. Structured `inputs` for chat/form/webhook triggers. Returns an execution ID immediately without waiting; poll `get_workflow_execution` for results. |
+| `get_workflow_execution` | Fetch an execution by `executionId` + `workflowId` (both required). Metadata only by default; set `includeData: true` (optionally `nodeNames`, `truncateData`) for node inputs/outputs. |
 
 ### Data tables
 
@@ -126,6 +132,7 @@ n8n's built-in tabular storage. **Not** an external service. Prefer over externa
 | `rename_data_table` / `rename_data_table_column` | Rename. |
 | `add_data_table_column` / `delete_data_table_column` | Schema changes. |
 | `add_data_table_rows` | Append rows. |
+| `get_data_table_rows` | Read rows (optional filter/sort/pagination). |
 
 ### Version history
 
@@ -133,7 +140,33 @@ n8n's built-in tabular storage. **Not** an external service. Prefer over externa
 |---|---|
 | `get_workflow_history` | List a workflow's saved versions, newest first (n8n 2.29.0+). |
 | `get_workflow_version` | Fetch a past version's full content by `versionId`. |
+| `get_workflow_versions_diff` | Diff two saved versions: nodes/connections added, removed, modified. |
 | `restore_workflow_version` | Re-apply a past version as the current draft (records a new history entry). |
+
+<!-- TEMPORARY: n8n Agents are in early preview. When the Agent tools ship to all instances, drop the early-preview callout below and update n8n-agents-official. -->
+### Building n8n Agents (early preview)
+
+**Early preview: these tools may not exist on the user's instance yet.** They register only when the instance enables the Agent builder. Before building an Agent, check whether `create_agent` is in your tool list (or ask the user); if it's absent, tell them the Agent preview isn't enabled rather than guessing or falling back to the LangChain Agent node.
+
+n8n **Agents** are a first-class conversational-agent product, distinct from the LangChain Agent node (`n8n-agents-official` covers the node, not these tools). Build order: `get_agent_builder_reference` → `discover_agent_assets` → `create_agent` → `mutate_agent` (one change per call, latest `configHash`) → `validate_agent` → `call_agent` to test.
+
+| Tool | What it does |
+|---|---|
+| `get_agent_builder_reference` | Required reference for Agent config and `mutate_agent` ops. Read before building. |
+| `discover_agent_assets` | Find models, chat integrations, attachable workflows, sub-agents, or MCP servers to reference. |
+| `search_agents` | Find existing Agents; also discovers sub-agents to attach. |
+| `get_agent` | Read a draft's config, resources, runnable state, and `configHash`. Call before `mutate_agent`. |
+| `list_agent_versions` | List an Agent's publish history, newest first. |
+| `create_agent` | Create a draft (optional initial model/credential/instructions). Returns the editor URL. |
+| `mutate_agent` | Apply one config/skill/task/custom-tool change, using the latest `configHash`. |
+| `verify_agent_mcp_server` | Test an MCP server + credential and return its tools. Call before adding an `mcpServers` entry. |
+| `update_agent_integration` | Connect or disconnect a Slack, Telegram, or Linear channel. |
+| `validate_agent` | Validate the draft, its references, and credential access. Required before publish. |
+| `call_agent` | Test the draft via built-in Preview chat. Uses real tools/credentials; side effects possible. |
+| `publish_agent` | Publish a valid draft; activates its tasks and integrations. |
+| `unpublish_agent` | Unpublish; stops live tasks and integrations. |
+| `revert_agent` | Restore a draft from a published version. |
+| `delete_agent` | Permanently delete an Agent and its resources. |
 
 ## The protocol, in order
 
@@ -141,7 +174,7 @@ For any n8n task:
 
 1. **Recognize the matching skill** from the index above. If the task spans skills, recognize the primary one first and pick up others as their triggers come up.
 2. **Invoke the skill via the Skill tool** before the first MCP call. Don't call n8n MCP tools blind.
-3. **Read the SDK reference once per session** before writing workflow code (`get_sdk_reference`). The most efficient way to avoid SDK-shape mistakes.
+3. **Read the SDK reference once per session** before writing workflow code (`get_workflow_sdk_reference`). The most efficient way to avoid SDK-shape mistakes.
 4. **Get node types before configuring any node** (`get_node_types`). Guessing parameter names creates invalid workflows, sometimes silently.
 5. **Validate before publish, verify after create/update.** Validation catches schema errors. Verification (pulling the workflow back via `get_workflow_details`) catches connection bugs validation misses.
 6. **Surface drift when you spot it.** If a tool or parameter doesn't match what a skill says, tell the user. Updates may be needed.

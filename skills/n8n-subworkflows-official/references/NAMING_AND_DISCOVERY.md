@@ -21,7 +21,7 @@ Tags compose, so a customer-domain tool carries `customer` + `tool`. How they dr
 - `{ query: 'date' }` returns anything with "date" in name or description, regardless of tag.
 - `{ tags: ['subworkflow'], query: 'parse' }` narrows to parsing sub-workflows.
 
-`list_tags` shows the instance's existing tag vocabulary. Check it before inventing a tag so you reuse exact names: AND-filtering and `addTags` are case- and spelling-exact, so `customer` and `Customers` are two different tags.
+`list_workflow_tags` shows the instance's existing tag vocabulary. Check it before inventing a tag so you reuse exact names: AND-filtering and `addTags` are case- and spelling-exact, so `customer` and `Customers` are two different tags.
 
 ## Search-before-build, in detail
 
@@ -116,7 +116,7 @@ Filter by tag:
 search_workflows({ tags: ['subworkflow'] })
 ```
 
-Return a list with name + 1-line summary from each `description`. Good moment to spot duplicates and propose consolidating. `list_tags` (which returns `usageCount` per tag) also gives a fast read on how the library is categorized.
+Return a list with name + 1-line summary from each `description`. Good moment to spot duplicates and propose consolidating. `list_workflow_tags` (which returns `usageCount` per tag) also gives a fast read on how the library is categorized.
 
 ## Renaming and reorganizing
 

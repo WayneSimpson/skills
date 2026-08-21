@@ -66,7 +66,7 @@ Threading binary through many JSON-transforming nodes means every node in the ch
 
 ## Verifying after merge
 
-`test_workflow` and inspect via `get_execution`:
+`test_workflow` and inspect via `get_workflow_execution`:
 
 - Merged item's `json` matches the top branch.
 - Merged item's `binary` matches the bottom branch.
@@ -77,7 +77,7 @@ If binary is missing, check the Merge mode (some don't combine binary) and that 
 
 ### Stripping binary before noticing
 
-By the time you notice, the original is gone. Test with `get_execution` after each node during development.
+By the time you notice, the original is gone. Test with `get_workflow_execution` after each node during development.
 
 ### "Merging" a single-source workflow
 

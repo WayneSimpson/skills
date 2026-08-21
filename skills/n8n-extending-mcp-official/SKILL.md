@@ -1,6 +1,6 @@
 ---
 name: n8n-extending-mcp-official
-description: 'Use when you want to expose an n8n workflow as a tool the coding agent can call. Two cases. (1) Wrap n8n API capabilities the MCP doesn''t natively expose: folder CRUD, tag rename/delete, instance metadata, credential creation. (2) Expose a general-purpose workflow as an agent tool: a workflow that calls a third-party API, runs business logic, or does any task you want the agent to invoke. Triggers on "expose as MCP tool", "build a tool for my agent", "I need to know X" where X isn''t an MCP tool, "create folder", "rename tag", or any capability gap.'
+description: 'Use when you want to expose an n8n workflow as a tool the coding agent can call. Two cases. (1) Wrap n8n API capabilities the MCP doesn''t natively expose: folder deletion, project create/rename, tag rename/delete, instance metadata, credential creation. (2) Expose a general-purpose workflow as an agent tool: a workflow that calls a third-party API, runs business logic, or does any task you want the agent to invoke. Triggers on "expose as MCP tool", "build a tool for my agent", "I need to know X" where X isn''t an MCP tool, "delete folder", "rename tag", or any capability gap.'
 ---
 
 <!-- TEMPORARY: update whenever n8n mcp capacities are added. a lot of listed functionalities missing are coming soon -->
@@ -8,7 +8,7 @@ description: 'Use when you want to expose an n8n workflow as a tool the coding a
 
 Any n8n workflow with MCP access enabled becomes a tool the coding agent can call by name. Two common cases:
 
-1. **Wrap n8n capabilities the MCP doesn't expose.** The MCP covers workflow CRUD, validation, execution, data tables, credential listing, execution search, folder/project listing, tag listing and attach/detach. Still missing: folder CRUD, tag rename/delete, instance metadata, credential creation. Build a workflow that hits the n8n API and exposes the result as an agent tool.
+1. **Wrap n8n capabilities the MCP doesn't expose.** The MCP covers workflow CRUD, validation, execution, data tables, credential listing, execution search, folder create/rename/move and folder/project listing, tag listing and attach/detach. Still missing: folder deletion, project create/rename, tag rename/delete, instance metadata, credential creation. Build a workflow that hits the n8n API and exposes the result as an agent tool.
 2. **Expose a general-purpose workflow as a tool.** A workflow that has nothing to do with n8n itself (calls a third-party API, runs internal business logic, looks something up in a private system) can be MCP-callable. Lets the agent invoke real operations during a coding session.
 
 The MCP calls your workflow as if it were a native tool: input from the `Execute Workflow Trigger`, output from the workflow's last node.
@@ -17,8 +17,8 @@ The MCP calls your workflow as if it were a native tool: input from the `Execute
 
 Case 1 (wrap n8n capability):
 
-- Folder CRUD (create, rename, move, delete): REST API exists, no MCP tool yet.
-- Tag rename/delete: the MCP lists tags (`list_tags`) and attaches/detaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names), but can't rename or delete tag entities. REST API exists for those.
+- Folder delete, and project create/rename: no MCP tool. Folder create/rename/move and moving workflows between folders now have MCP tools (`create_folder`, `update_folder`, `move_workflows_to_folder`), on a registered instance; delete still needs the REST API.
+- Tag rename/delete: the MCP lists tags (`list_workflow_tags`) and attaches/detaches them (`update_workflow` `addTags`/`removeTags`, auto-creating unknown names), but can't rename or delete tag entities. REST API exists for those.
 - Instance metadata (limits, plan info, configured integrations): no MCP tool.
 - Credential creation: REST API exists (`POST /credentials`), no MCP tool yet.
 - Any n8n API operation the MCP doesn't natively expose.
@@ -71,14 +71,14 @@ Most common patterns, by usefulness. Case 2 (general agent tools) is whatever yo
 
 > **n8n REST API reference:** https://docs.n8n.io/api/api-reference/. Start here for any case-1 wrap. Find the endpoint, then wrap it with an HTTP Request node + `n8nApi` credential. Self-hosted instances expose this at `<instance-url>/api/v1/`.
 
-### 1. Folder management
+### 1. Folder delete and project management
 
-The MCP can place workflows into existing folders but can't create, rename, move, or delete them. n8n's REST API has a [Folders endpoint](https://docs.n8n.io/api/api-reference/#tag/folders), so a one-time wrap solves this for users who organize folders frequently.
+The MCP now creates, renames, and moves folders natively (`create_folder`, `update_folder`, `move_workflows_to_folder`), so those no longer need wrapping. Still missing: **deleting** a folder, and creating/renaming **projects**. n8n's REST API covers both ([Folders endpoint](https://docs.n8n.io/api/api-reference/#tag/folders)), so a one-time wrap fills the gap.
 
 ```
-Tool: create folder
-Input: { projectId: string, name: string, parentFolderId?: string }
-Output: { id, name, projectId, parentFolderId? }
+Tool: delete folder
+Input: { projectId: string, folderId: string }
+Output: { success: boolean }
 ```
 
 ### 2. Instance metadata
